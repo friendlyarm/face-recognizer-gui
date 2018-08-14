@@ -1,9 +1,46 @@
 #include "gui/displaywidget.h"
 
+#include <stdio.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/ioctl.h>
+#include <linux/videodev.h>
+
+static int is_camera(const char* filename){
+        FILE* f = fopen( filename, "r" );
+        if (f == NULL) {
+                return 0;
+        }
+        char buff[50] = {0};
+        int ret = 0;
+ 
+        if (fread(buff, 1, sizeof(buff)-1, f) <= 0) {
+                fclose(f);
+                return 0;
+        }
+        fclose( f );
+        if (strstr(buff, "Camera") != NULL || strstr(buff, "UVC") != NULL || strstr(buff, "Webcam") != NULL) {
+                return 1;
+        }
+        return 0;
+}
+
 DisplayWidget::DisplayWidget(QWidget *parent) : QWidget(parent)
 {
     QStringList cameraOptions;
-    cameraOptions << "0" << "1" << "2" << "3" << "4" << "5" << "6";
+
+    int i;
+    char filename[255];
+    for (i=0; i<20; i++) {
+        sprintf(filename, "/sys/class/video4linux/video%d/name", i);
+        if (is_camera(filename) == 1) {
+		cameraOptions << QString("%1").arg(i);
+        }
+    }
+    if (cameraOptions.count()==0) {
+        cameraOptions << "0" << "1" << "2" << "3" << "4" << "5" << "6";
+    }
+
     QComboBox* cameraComboBox = new QComboBox;
     cameraComboBox->addItems(cameraOptions);
 
