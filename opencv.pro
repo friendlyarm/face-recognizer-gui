@@ -11,10 +11,12 @@ CONFIG += c++11
 TARGET = opencv
 TEMPLATE = app
 DESTDIR = $$PWD
-INCLUDEPATH += /usr/include/opencv \
+INCLUDEPATH += /usr/local/include/opencv \
     ./resources
 
-LIBS += -L/lib -I/usr/include/opencv -lopencv_core -lopencv_cudaimgproc -lopencv_cudaobjdetect -lopencv_imgcodecs -lopencv_imgproc -lopencv_objdetect -lopencv_video -lopencv_videoio -lopencv_videostab
+# -lopencv_cudaimgproc -lopencv_cudaobjdetect
+
+LIBS += -L/usr/local/lib -I/usr/local/include/opencv -lopencv_core -lopencv_imgcodecs -lopencv_imgproc -lopencv_objdetect -lopencv_video -lopencv_videoio -lopencv_videostab
 
 SOURCES += main.cpp \
     gui/mainwindow.cpp \
