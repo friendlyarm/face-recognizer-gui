@@ -8,10 +8,10 @@ QT += core gui
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 CONFIG += c++11
-TARGET = opencv
+TARGET = face-recognizer-gui
 TEMPLATE = app
 DESTDIR = $$PWD
-INCLUDEPATH += /usr/local/include/opencv \
+INCLUDEPATH += /usr/local/include/opencv4 \
     ./resources
 
 # -lopencv_cudaimgproc -lopencv_cudaobjdetect

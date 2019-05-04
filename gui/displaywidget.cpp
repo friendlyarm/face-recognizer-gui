@@ -5,50 +5,32 @@
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <linux/videodev.h>
-
-static int is_camera(const char* filename){
-        FILE* f = fopen( filename, "r" );
-        if (f == NULL) {
-                return 0;
-        }
-        char buff[50] = {0};
-        int ret = 0;
- 
-        if (fread(buff, 1, sizeof(buff)-1, f) <= 0) {
-                fclose(f);
-                return 0;
-        }
-        fclose( f );
-        if (strstr(buff, "Camera") != NULL || strstr(buff, "UVC") != NULL || strstr(buff, "Webcam") != NULL) {
-                return 1;
-        }
-        return 0;
-}
+#include <QMessageBox>
+#include <QApplication>
 
 DisplayWidget::DisplayWidget(QWidget *parent) : QWidget(parent)
 {
     QStringList cameraOptions;
 
-    int i;
-    char filename[255];
-    for (i=0; i<20; i++) {
-        sprintf(filename, "/sys/class/video4linux/video%d/name", i);
-        if (is_camera(filename) == 1) {
-		cameraOptions << QString("%1").arg(i);
-        }
+    QStringList previewDevices;
+    if (QDir("/sys/class/video4linux/v4l-subdev2/device/video4linux/video1").exists() 
+        || QDir("/sys/class/video4linux/v4l-subdev5/device/video4linux/video1").exists()) {
+        previewDevices.append("/dev/video1");
     }
-    if (cameraOptions.count()==0) {
-        cameraOptions << "0" << "1" << "2" << "3" << "4" << "5" << "6";
+    if (QDir("/sys/class/video4linux/v4l-subdev2/device/video4linux/video5").exists() 
+        || QDir("/sys/class/video4linux/v4l-subdev5/device/video4linux/video5").exists()) {
+        previewDevices.append("/dev/video5");
     }
+
+    cameraOptions << QString("rkisp device=%1 io-mode=1 ! video/x-raw,format=NV12,width=640,height=480,framerate=30/1 ! videoconvert ! appsink")
+        .arg(previewDevices.at(0));
 
     QComboBox* cameraComboBox = new QComboBox;
     cameraComboBox->addItems(cameraOptions);
 
     QHBoxLayout* horizontalLayout = new QHBoxLayout();
     QPushButton *runButton = new QPushButton("run", this);
-    QPushButton *fileSelector = new QPushButton("select file");
     horizontalLayout->addWidget(cameraComboBox);
-    horizontalLayout->addWidget(fileSelector);
     horizontalLayout->addWidget(runButton);
 
     QVBoxLayout *layout = new QVBoxLayout;
@@ -89,17 +71,17 @@ DisplayWidget::DisplayWidget(QWidget *parent) : QWidget(parent)
     QObject::connect(cameraComboBox, SIGNAL(currentIndexChanged(int)),
                      camera_, SLOT(cameraIndexSlot(int)));
 
-    QObject::connect(fileSelector, SIGNAL(clicked()),
-                     this,	SLOT(openFileDialog()));
-
     QObject::connect(sourceSelector, SIGNAL(toggled(bool)),
                      camera_, SLOT(usingVideoCameraSlot(bool)));
 
-    QObject::connect(this, SIGNAL(videoFileNameSignal(QString)),
-                     camera_, SLOT(videoFileNameSlot(QString)));
-
     faceDector_->connect(this, SIGNAL(facecascade_name_signal(QString)),
                      SLOT(facecascade_filename(QString)));
+
+    if (previewDevices.count() == 0) {
+        QMessageBox::critical(this,
+                                "Video Error",
+                                "Make sure you have a mipi camera connected and entered correct camera parameter!");
+    }
 }
 
 DisplayWidget::~DisplayWidget()
@@ -115,10 +97,4 @@ DisplayWidget::~DisplayWidget()
 void DisplayWidget::change_face_cascade_filename(QString filename)
 {
     emit facecascade_name_signal(filename);
-}
-
-void DisplayWidget::openFileDialog()
-{
-    QString filename = QFileDialog::getOpenFileName(this, tr("Video"));
-    emit videoFileNameSignal(filename);
 }

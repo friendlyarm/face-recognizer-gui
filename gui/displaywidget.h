@@ -26,11 +26,9 @@ public:
     ~DisplayWidget();
 
 signals:
-    void videoFileNameSignal(QString videoFileName);
     void facecascade_name_signal(QString filename);
 
 public slots:
-    void openFileDialog();
     void change_face_cascade_filename(QString filename);
 
 private:
